@@ -1,0 +1,3 @@
+- hosts: dacha_pc
+  roles:
+    - { role: smart_house }

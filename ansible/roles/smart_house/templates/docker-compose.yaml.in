@@ -1,0 +1,131 @@
+version: '3.8'
+services:
+  mqtt:
+    image: eclipse-mosquitto:2.0.15
+    volumes:
+      - "{{ dacha_var }}/mosquitto:/mosquitto"
+    command: "mosquitto -c /mosquitto-no-auth.conf"
+    ports:
+      - 1883:1883
+    networks:
+      - dacha-net
+    restart: always
+
+  zigbee2mqtt:
+    image: koenkk/zigbee2mqtt
+    volumes:
+      - "{{ dacha_etc }}/zigbee2mqtt/configuration.yaml:/app/data/configuration.yaml"
+      - "{{ dacha_etc }}/zigbee2mqtt/secrets.yaml:/app/data/secrets.yaml"
+      - "{{ dacha_var }}/zigbee2mqtt:/app/data"
+      - /run/udev:/run/udev:ro
+    ports:
+      - "{{ zigbee2mqtt_port }}:8080"
+    environment:
+      - TZ=Europe/Moscow
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+    networks:
+      - dacha-net
+    restart: always
+
+  ble2mqtt:
+    image: smartdacha/ble2mqtt
+    volumes:
+      - "{{ dacha_etc }}/ble2mqtt/config.yml:/config.yml"
+      - /var/run/dbus:/var/run/dbus
+    command:
+      - "--config=/config.yml"
+    networks:
+      - dacha-net
+    restart: always
+
+  mqtt-exporter:
+    image: kpetrem/mqtt-exporter:1.0.5
+    environment:
+      - MQTT_ADDRESS=mqtt
+      - ZIGBEE2MQTT_AVAILABILITY=True
+      - LOG_LEVEL=WARNING
+      - PROMETHEUS_PREFIX=mqtt_sensor_
+    networks:
+      - dacha-net
+    restart: always
+
+  mosquitto-exporter:
+    image: sapcc/mosquitto-exporter:0.8.0
+    environment:
+      - "BROKER_ENDPOINT=tcp://mqtt:1883"
+    networks:
+      - dacha-net
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:v2.37.6
+    ports:
+      - "{{ prometheus_port }}:9090"
+    volumes:
+      - "{{ dacha_etc }}/prometheus:/etc/prometheus/:ro"
+      - "{{ dacha_var }}/prometheus:/prometheus/"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    networks:
+      - dacha-net
+    user: "0:0"
+    restart: always
+
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    volumes:
+      - "{{ dacha_etc }}/alertmanager/:/etc/alertmanager/:ro"
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - "--web.external-url=https://alertmanager.local"
+    ports:
+      - "{{ alertmanager_port }}:9093"
+    networks:
+      - dacha-net
+    restart: always
+
+  node-exporter:
+    image: bitnami/node-exporter:1.5.0
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    volumes:
+      - '/:/host:ro,rslave'
+    networks:
+      - dacha-net
+    restart: always
+
+  grafana:
+    image: grafana/grafana:8.5.22
+    volumes:
+      - "{{ dacha_etc }}/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro"
+      - "{{ dacha_etc }}/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro"
+      - "{{ dacha_var }}/grafana/:/var/lib/grafana"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "{{ grafana_port }}:3000"
+    networks:
+      - dacha-net
+    user: "0:0"
+    restart: always
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    volumes:
+      - "{{ dacha_var }}/homeassistant/:/config/"
+    environment:
+      - TZ=Europe/Moscow
+    ports:
+      - "{{ homeassistant_port }}:8123"
+    networks:
+      - dacha-net
+    restart: always
+
+networks:
+  dacha-net:
+    driver: bridge

@@ -1,0 +1,35 @@
+- name: ensures {{ item }} dir exists
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "755"
+  with_items:
+    - "{{ dacha_var }}"
+    - "{{ dacha_var }}/mosquitto"
+    - "{{ dacha_var }}/zigbee2mqtt"
+    - "{{ dacha_var }}/prometheus"
+    - "{{ dacha_var }}/grafana"
+    - "{{ dacha_var }}/homeassistant"
+    - "{{ dacha_etc }}"
+
+- name: Copy configs {{ item }} files
+  copy: src=files/{{ item }} dest={{ dacha_etc }} mode=0644
+  with_items:
+    - zigbee2mqtt
+    - prometheus
+    - grafana
+    - alertmanager
+    - ble2mqtt
+  notify:
+    - restart dacha
+
+- name: Load ble2mqtt image
+  command: "docker load -i ble2mqtt/ble2mqtt.tar"
+  args:
+    chdir: "{{ dacha_etc }}"
+
+
+- name: Copy docker-compose file
+  template: src=templates/docker-compose.yaml.in dest={{ dacha_etc }}/docker-compose.yaml mode=0644
+  notify:
+    - restart dacha

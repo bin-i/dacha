@@ -1,0 +1,4 @@
+- name: restart dacha
+  command: "docker-compose up -d --force-recreate"
+  args:
+    chdir: "{{ dacha_etc }}"

@@ -1,0 +1,1 @@
+dacha_pc ansible_ssh_host=smartdachapc ansible_ssh_user=root

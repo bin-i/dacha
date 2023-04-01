@@ -1,0 +1,23 @@
+permit_join: false
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://mqtt
+serial:
+  port: /dev/ttyUSB0
+frontend:
+  port: 8080
+advanced:
+  network_key: '!secrets.yaml network_key'
+  homeassistant_legacy_entity_attributes: false
+  legacy_api: false
+  legacy_availability_payload: false
+device_options:
+  legacy: false
+devices: devices.yaml
+groups: groups.yaml
+homeassistant: true
+availability:
+  active:
+    timeout: 10
+  passive:
+    timeout: 1500

@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "ble2mqtt"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+paho-mqtt = "^1.6.1"
+bleak = "^0.20.1"
+construct = "^2.10.68"
+pyyaml = "^6.0"
+
+[tool.poetry.scripts]
+ble2mqtt = 'ble2mqtt.ble2mqtt:run'
+
+[tool.black]
+line-length = 120
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

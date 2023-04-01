@@ -1,0 +1,23 @@
+sensors:
+  - mac: A4:C1:38:B7:DE:91
+    schema: ATC_MiThermometer
+  - mac: A4:C1:38:72:38:1B
+    schema: ATC_MiThermometer
+  - mac: A4:C1:38:AA:D4:94
+    schema: ATC_MiThermometer
+  - mac: A4:C1:38:BA:73:CC
+    schema: ATC_MiThermometer
+  - mac: A4:C1:38:78:56:A3
+    schema: ATC_MiThermometer
+  - mac: A4:C1:38:E8:60:EC
+    schema: ATC_MiThermometer
+  - mac: A4:C1:38:C7:DB:0D
+    schema: ATC_MiThermometer
+  - mac: A4:C1:38:27:FE:7F
+    schema: ATC_MiThermometer
+  - mac: A4:C1:38:55:23:D6
+    schema: ATC_MiThermometer
+frequency_sec: 30
+death_time_sec: 60
+mqtt_gate: mqtt
+mqtt_prefix: ble2mqtt

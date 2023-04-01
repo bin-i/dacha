@@ -1,0 +1,8 @@
+dacha_etc: /etc/dacha
+dacha_var: /var/dacha
+
+zigbee2mqtt_port: 8080
+prometheus_port: 8081
+alertmanager_port: 8082
+grafana_port: 8083
+homeassistant_port: 8084
