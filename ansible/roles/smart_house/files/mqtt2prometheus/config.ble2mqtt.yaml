@@ -1,0 +1,43 @@
+mqtt:
+ server: tcp://mqtt:1883
+ client_id: mqtt2prometheus
+ topic_path: ble2mqtt/#
+ device_id_regex: "[^\\/]+\\/(?P<deviceid>[^\\/]+)(.*)?"
+ qos: 0
+
+cache:
+ timeout: 24h
+
+json_parsing:
+ separator: .
+
+metrics:
+ - prom_name: sensor_temperature
+   mqtt_name: temperature
+   help: DHT22 temperature reading
+   type: gauge
+
+ - prom_name: humidity
+   mqtt_name: humidity
+   help: DHT22 humidity reading
+   type: gauge
+
+ - prom_name: sensor_battery
+   mqtt_name: battery
+   help: DHT22 battery
+   type: gauge
+
+ - prom_name: sensor_battery_mv
+   mqtt_name: battery_mv
+   help: DHT22 battery_mv
+   type: gauge
+
+ - prom_name: sensor_frame
+   mqtt_name: frame
+   help: DHT22 frame
+   type: gauge
+
+ - prom_name: sensor_ble_rssi
+   mqtt_name: rssi
+   help: rssi
+   type: gauge

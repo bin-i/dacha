@@ -14,10 +14,18 @@ scrape_configs:
     static_configs:
       - targets: ["mosquitto-exporter:9234"]
 
-  - job_name: mqtt-exporter
-    scrape_interval: 3s
+  - job_name: mqtt2prometheus
     static_configs:
-      - targets: ["mqtt-exporter:9000"]
+      - targets:
+        - "mqtt2prometheus.ble2mqtt:9641"
+        - "mqtt2prometheus.zigbee2mqtt:9641"
+        - "mqtt2prometheus.availability:9641"
+    metric_relabel_configs:
+      - source_labels: [ topic ]
+        target_label: location
+        regex: '.*\/location\/([^\/]+).*'
+        replacement: '$1'
+    scrape_interval: 3s
 
   - job_name: node-exporter
     static_configs:

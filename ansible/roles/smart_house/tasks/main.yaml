@@ -16,10 +16,11 @@
   copy: src=files/{{ item }} dest={{ dacha_etc }} mode=0644
   with_items:
     - zigbee2mqtt
+    - ble2mqtt
+    - mqtt2prometheus
     - prometheus
     - grafana
     - alertmanager
-    - ble2mqtt
   notify:
     - restart dacha
 
@@ -27,7 +28,6 @@
   command: "docker load -i ble2mqtt/ble2mqtt.tar"
   args:
     chdir: "{{ dacha_etc }}"
-
 
 - name: Copy docker-compose file
   template: src=templates/docker-compose.yaml.in dest={{ dacha_etc }}/docker-compose.yaml mode=0644

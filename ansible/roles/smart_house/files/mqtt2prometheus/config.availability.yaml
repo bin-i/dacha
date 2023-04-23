@@ -1,0 +1,20 @@
+mqtt:
+ server: tcp://mqtt:1883
+ client_id: mqtt2prometheus.availability
+ topic_path: +/+/+/+/availability
+ device_id_regex: "[^\\/]+\\/(?P<deviceid>[^\\/]+)(.*)?"
+ qos: 2
+cache:
+ timeout: 24h
+json_parsing:
+ separator: .
+
+metrics:
+ - prom_name: sensor_availability
+   mqtt_name: state
+   type: gauge
+   string_value_mapping:
+    map:
+     offline: 0
+     online: 1
+    error_value: 2

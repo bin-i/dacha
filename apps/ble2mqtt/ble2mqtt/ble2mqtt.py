@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import logging
+import logging.config
 import pathlib
+import sys
 import typing as tp
 from time import time
 
@@ -53,15 +54,14 @@ class BleHandler:
             if device.name and device.name.startswith("ATC_"):
                 self.logger.warning(f"Skip handling (LOST?): {device=}")
             else:
-                self.logger.debug(f"Skip handling: {device=}")
+                pass
         else:
             self.logger.debug(
-                f"Message received: {device=}, {advertisement_data=}",
+                f"Message received: {device=}",
             )
             for raw_msg in advertisement_data.service_data.values():
                 message = self.schemas[device.address](raw_msg)
                 message["rssi"] = advertisement_data.rssi
-                self.logger.debug(f"Message parsed: {message=}")
                 if self._on_message:
                     await self._on_message(message, device.address)
                 else:
@@ -72,30 +72,27 @@ T = tp.TypeVar("T")
 
 
 class Alive(tp.Generic[T]):
-    def __init__(self, timeout: int) -> None:
+    def __init__(self, timeout: int, logger: logging.Logger) -> None:
+        self._logger = logger
         self._value: tp.Optional[T] = None
         self._time = time()
         self._timeout = timeout
-        self._prev_val: tp.Optional[T] = self._value
-        self._fist_call = True
 
     async def set(self, value: T):
         self._value = value
         self._time = time()
 
-    async def get(self) -> tp.Tuple[tp.Optional[T], bool]:
-        result = self._value
-        alive_has_changed = False
+    async def get(self) -> tp.Optional[T]:
+        self._value
 
-        if time() - self._time > self._timeout:
-            result = None
+        elapsed = time() - self._time
+        if elapsed > self._timeout:
+            if self._value is not None:
+                self._logger.info(f"too much time: {elapsed} from latest setting, reseting value")
+            self._value = None
+            self._time = time()
 
-        if self._fist_call or (self._prev_val is None or result is None) and self._prev_val != result:
-            alive_has_changed = True
-
-        self._prev_val = result
-        self._fist_call = False
-        return result, alive_has_changed
+        return self._value
 
 
 class MqttSender:
@@ -109,45 +106,104 @@ class MqttSender:
         self.mqtt_client = mqtt_client
         self.mqtt_prefix = settings.mqtt_prefix
         self.latest: tp.Dict[str, Alive[ParsedMessage]] = {}
+        self.locations_map: tp.Dict[str, str] = {}
         for device in settings.devices:
             self.latest[device.mac] = Alive(
                 device.death_time_sec or settings.death_time_sec,
+                self.logger.getChild(device.mac),
             )
+            self.locations_map[device.mac] = device.location
 
     async def on_message(self, msg: ParsedMessage, mac: str) -> None:
         await self.latest[mac].set(msg)
 
     async def publish(self) -> None:
         for mac, message in self.latest.items():
-            data, has_changed = await message.get()
-            if has_changed:
-                state = "offline" if data is None else "online"
-                self.logger.info(
-                    f"Device {mac=} has change availability status: {state=}",
-                )
-                self.mqtt_client.publish(
-                    f"{self.mqtt_prefix}/{mac}/availability",
-                    json.dumps({"state": state}).encode(),
-                    qos=2,
-                    retain=True,
-                )
+            data = await message.get()
+
+            self.mqtt_client.publish(
+                f"{self.mqtt_prefix}/{mac}/location/{self.locations_map[mac]}/availability",
+                json.dumps({"state": "online" if data else "offline"}).encode(),
+            )
+
             if data:
-                logging.debug(f"{mac=} {data=}")
+                self.logger.debug(f"send {mac} data")
                 self.mqtt_client.publish(
-                    f"{self.mqtt_prefix}/{mac}",
+                    f"{self.mqtt_prefix}/{mac}/location/{self.locations_map[mac]}",
                     json.dumps(data).encode(),
                 )
+            else:
+                self.logger.debug(f"no data for {mac}")
 
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--config", type=pathlib.Path, required=True)
+    parser.add_argument(
+        "-d",
+        "--debug",
+        help="Print lots of debugging statements",
+        action="store_const",
+        dest="loglevel",
+        const=logging.DEBUG,
+        default=logging.WARNING,
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="Be verbose",
+        action="store_const",
+        dest="loglevel",
+        const=logging.INFO,
+    )
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO)
+    class _ExcludeErrorsFilter(logging.Filter):
+        def filter(self, record):
+            """Only lets through log messages with log level below ERROR ."""
+            return record.levelno < logging.WARNING
+
+    config = {
+        "version": 1,
+        "filters": {
+            "exclude_errors": {
+                "()": _ExcludeErrorsFilter,
+            },
+        },
+        "formatters": {
+            # Modify log message format here or replace with your custom formatter class
+            "my_formatter": {
+                "format": "(%(process)d) %(asctime)s %(name)s (line %(lineno)s) | %(levelname)s %(message)s",
+            },
+        },
+        "handlers": {
+            "console_stderr": {
+                # Sends log messages with log level ERROR or higher to stderr
+                "class": "logging.StreamHandler",
+                "level": "WARNING",
+                "formatter": "my_formatter",
+                "stream": sys.stderr,
+            },
+            "console_stdout": {
+                # Sends log messages with log level lower than ERROR to stdout
+                "class": "logging.StreamHandler",
+                "level": args.loglevel,
+                "formatter": "my_formatter",
+                "filters": ["exclude_errors"],
+                "stream": sys.stdout,
+            },
+        },
+        "root": {
+            # In general, this should be kept at 'NOTSET'.
+            # Otherwise it would interfere with the log levels set for each handler.
+            "level": "NOTSET",
+            "handlers": ["console_stderr", "console_stdout"],
+        },
+    }
+
+    logging.config.dictConfig(config)
     logger = logging.getLogger("ble2mqtt")
-    logger.setLevel(logging.INFO)
 
     settings = Settings(pathlib.Path(args.config))
 

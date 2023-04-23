@@ -16,7 +16,7 @@ pyyaml = "^6.0"
 ble2mqtt = 'ble2mqtt.ble2mqtt:run'
 
 [tool.black]
-line-length = 120
+line-length = 100
 
 [build-system]
 requires = ["poetry-core"]

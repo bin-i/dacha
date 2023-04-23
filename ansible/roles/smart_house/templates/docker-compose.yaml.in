@@ -35,17 +35,35 @@ services:
       - /var/run/dbus:/var/run/dbus
     command:
       - "--config=/config.yml"
+      - "--debug"
     networks:
       - dacha-net
     restart: always
 
-  mqtt-exporter:
-    image: kpetrem/mqtt-exporter:1.0.5
-    environment:
-      - MQTT_ADDRESS=mqtt
-      - ZIGBEE2MQTT_AVAILABILITY=True
-      - LOG_LEVEL=WARNING
-      - PROMETHEUS_PREFIX=mqtt_sensor_
+  mqtt2prometheus.ble2mqtt:
+    image: hikhvar/mqtt2prometheus:v0.1.7
+    volumes:
+      - "{{ dacha_etc }}/mqtt2prometheus/config.ble2mqtt.yaml:/config.yaml:ro"
+    networks:
+      - dacha-net
+    restart: always
+
+  mqtt2prometheus.zigbee2mqtt:
+    image: hikhvar/mqtt2prometheus:v0.1.7
+    ports:
+      - 9641:9641
+    volumes:
+      - "{{ dacha_etc }}/mqtt2prometheus/config.zigbee2mqtt.yaml:/config.yaml:ro"
+    networks:
+      - dacha-net
+    restart: always
+
+  mqtt2prometheus.availability:
+    image: hikhvar/mqtt2prometheus:v0.1.7
+    ports:
+      - 9642:9641
+    volumes:
+      - "{{ dacha_etc }}/mqtt2prometheus/config.availability.yaml:/config.yaml:ro"
     networks:
       - dacha-net
     restart: always
@@ -59,7 +77,7 @@ services:
     restart: always
 
   prometheus:
-    image: prom/prometheus:v2.37.6
+    image: prom/prometheus:v2.43.0
     ports:
       - "{{ prometheus_port }}:9090"
     volumes:
@@ -98,7 +116,7 @@ services:
     restart: always
 
   grafana:
-    image: grafana/grafana:8.5.22
+    image: grafana/grafana:9.2.15
     volumes:
       - "{{ dacha_etc }}/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro"
       - "{{ dacha_etc }}/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro"
@@ -106,7 +124,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_ALLOW_SIGN_UP=true
     ports:
       - "{{ grafana_port }}:3000"
     networks:
