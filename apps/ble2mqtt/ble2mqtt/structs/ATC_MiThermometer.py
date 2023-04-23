@@ -14,7 +14,7 @@ ATC_MiThermometer_struct = construct.Struct(
 )
 
 
-def deserialize(data: bytes) -> tp.Dict[str, tp.Any]:
+def deserialize_ATC(data: bytes) -> tp.Dict[str, tp.Any]:
     p_data = ATC_MiThermometer_struct.parse(data)
     return {
         "mac": str(bytes(p_data.mac).hex(":")).upper(),
@@ -27,4 +27,4 @@ def deserialize(data: bytes) -> tp.Dict[str, tp.Any]:
 
 
 def get_parsers() -> tp.Dict[str, tp.Callable[[bytes], tp.Dict[str, tp.Any]]]:
-    return {"ATC_MiThermometer": deserialize}
+    return {"ATC_MiThermometer": deserialize_ATC}

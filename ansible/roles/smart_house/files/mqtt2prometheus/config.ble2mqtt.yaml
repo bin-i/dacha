@@ -1,7 +1,7 @@
 mqtt:
  server: tcp://mqtt:1883
  client_id: mqtt2prometheus
- topic_path: ble2mqtt/#
+ topic_path: ble2mqtt/+/+/+
  device_id_regex: "[^\\/]+\\/(?P<deviceid>[^\\/]+)(.*)?"
  qos: 0
 

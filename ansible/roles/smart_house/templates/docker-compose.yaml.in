@@ -50,8 +50,6 @@ services:
 
   mqtt2prometheus.zigbee2mqtt:
     image: hikhvar/mqtt2prometheus:v0.1.7
-    ports:
-      - 9641:9641
     volumes:
       - "{{ dacha_etc }}/mqtt2prometheus/config.zigbee2mqtt.yaml:/config.yaml:ro"
     networks:
@@ -60,8 +58,6 @@ services:
 
   mqtt2prometheus.availability:
     image: hikhvar/mqtt2prometheus:v0.1.7
-    ports:
-      - 9642:9641
     volumes:
       - "{{ dacha_etc }}/mqtt2prometheus/config.availability.yaml:/config.yaml:ro"
     networks:

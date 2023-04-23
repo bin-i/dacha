@@ -11,6 +11,7 @@ class Sensor:
         self.mac: str = kwargs["mac"]
         self.schema: str = kwargs["schema"]
         self.location: str = kwargs.get("location", "unknown")
+        self.device_type: str = kwargs["device_type"]
         self.death_time_sec: tp.Optional[int] = kwargs.get(
             "death_time_sec",
             None,

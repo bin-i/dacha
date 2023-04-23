@@ -1,7 +1,7 @@
 mqtt:
  server: tcp://mqtt:1883
  client_id: mqtt2prometheus.zigbee
- topic_path: zigbee2mqtt/#
+ topic_path: zigbee2mqtt/+/+/+
  device_id_regex: "[^\\/]+\\/(?P<deviceid>[^\\/]+)(.*)?"
  qos: 0
 cache:

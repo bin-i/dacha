@@ -10,6 +10,7 @@ import typing as tp
 from time import time
 
 import paho.mqtt.client as mqtt
+from ble2mqtt.settings import Sensor
 from ble2mqtt.settings import Settings
 from ble2mqtt.structs import ATC_MiThermometer
 from bleak import BleakScanner
@@ -106,13 +107,13 @@ class MqttSender:
         self.mqtt_client = mqtt_client
         self.mqtt_prefix = settings.mqtt_prefix
         self.latest: tp.Dict[str, Alive[ParsedMessage]] = {}
-        self.locations_map: tp.Dict[str, str] = {}
+        self.devices: tp.Dict[str, Sensor] = {}
         for device in settings.devices:
             self.latest[device.mac] = Alive(
                 device.death_time_sec or settings.death_time_sec,
                 self.logger.getChild(device.mac),
             )
-            self.locations_map[device.mac] = device.location
+            self.devices[device.mac] = device
 
     async def on_message(self, msg: ParsedMessage, mac: str) -> None:
         await self.latest[mac].set(msg)
@@ -122,14 +123,14 @@ class MqttSender:
             data = await message.get()
 
             self.mqtt_client.publish(
-                f"{self.mqtt_prefix}/{mac}/location/{self.locations_map[mac]}/availability",
+                f"{self.mqtt_prefix}/{mac}/{self.devices[mac].device_type}/{self.devices[mac].location}/availability",
                 json.dumps({"state": "online" if data else "offline"}).encode(),
             )
 
             if data:
                 self.logger.debug(f"send {mac} data")
                 self.mqtt_client.publish(
-                    f"{self.mqtt_prefix}/{mac}/location/{self.locations_map[mac]}",
+                    f"{self.mqtt_prefix}/{mac}/{self.devices[mac].device_type}/{self.devices[mac].location}",
                     json.dumps(data).encode(),
                 )
             else:

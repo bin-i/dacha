@@ -23,7 +23,11 @@ scrape_configs:
     metric_relabel_configs:
       - source_labels: [ topic ]
         target_label: location
-        regex: '.*\/location\/([^\/]+).*'
+        regex: '[^\/]+\/[^\/]+\/[^\/]+\/([^\/]+).*'
+        replacement: '$1'
+      - source_labels: [ topic ]
+        target_label: sensor_type
+        regex: '[^\/]+\/[^\/]+\/([^\/]+).*'
         replacement: '$1'
     scrape_interval: 3s
 
