@@ -13,6 +13,7 @@ metrics:
  - prom_name: sensor_availability
    mqtt_name: state
    type: gauge
+   omit_timestamp: true
    string_value_mapping:
     map:
      offline: 0

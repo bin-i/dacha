@@ -17,7 +17,7 @@ metrics:
    help: DHT22 temperature reading
    type: gauge
 
- - prom_name: humidity
+ - prom_name: sensor_humidity
    mqtt_name: humidity
    help: DHT22 humidity reading
    type: gauge

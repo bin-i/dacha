@@ -79,13 +79,11 @@ class Alive(tp.Generic[T]):
         self._time = time()
         self._timeout = timeout
 
-    async def set(self, value: T):
+    def set(self, value: T):
         self._value = value
         self._time = time()
 
-    async def get(self) -> tp.Optional[T]:
-        self._value
-
+    def get(self) -> tp.Optional[T]:
         elapsed = time() - self._time
         if elapsed > self._timeout:
             if self._value is not None:
@@ -116,11 +114,11 @@ class MqttSender:
             self.devices[device.mac] = device
 
     async def on_message(self, msg: ParsedMessage, mac: str) -> None:
-        await self.latest[mac].set(msg)
+        self.latest[mac].set(msg)
 
     async def publish(self) -> None:
         for mac, message in self.latest.items():
-            data = await message.get()
+            data = message.get()
 
             self.mqtt_client.publish(
                 f"{self.mqtt_prefix}/{mac}/{self.devices[mac].device_type}/{self.devices[mac].location}/availability",

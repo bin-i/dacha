@@ -1,5 +1,5 @@
 dacha_etc: /etc/dacha
-dacha_var: /var/dacha
+dacha_var: /home/dacha/var/
 
 zigbee2mqtt_port: 8080
 prometheus_port: 8081
