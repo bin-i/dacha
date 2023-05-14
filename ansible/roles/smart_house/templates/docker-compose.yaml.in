@@ -35,6 +35,7 @@ services:
       - /var/run/dbus:/var/run/dbus
     command:
       - "--config=/config.yml"
+      - "--debug"
     networks:
       - dacha-net
     restart: always

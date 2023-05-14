@@ -105,6 +105,7 @@ class MqttSender:
         self.mqtt_client = mqtt_client
         self.mqtt_prefix = settings.mqtt_prefix
         self.latest: tp.Dict[str, Alive[ParsedMessage]] = {}
+        self.bleak_scanner: tp.Optional[BleakScanner] = None
         self.devices: tp.Dict[str, Sensor] = {}
         for device in settings.devices:
             self.latest[device.mac] = Alive(
@@ -113,10 +114,14 @@ class MqttSender:
             )
             self.devices[device.mac] = device
 
+    def register_bleak(self, bleak_scanner: BleakScanner):
+        self.bleak_scanner = bleak_scanner
+
     async def on_message(self, msg: ParsedMessage, mac: str) -> None:
         self.latest[mac].set(msg)
 
     async def publish(self) -> None:
+        something_is_alive = False
         for mac, message in self.latest.items():
             data = message.get()
 
@@ -126,6 +131,7 @@ class MqttSender:
             )
 
             if data:
+                something_is_alive = True
                 self.logger.debug(f"send {mac} data")
                 self.mqtt_client.publish(
                     f"{self.mqtt_prefix}/{mac}/{self.devices[mac].device_type}/{self.devices[mac].location}",
@@ -133,6 +139,17 @@ class MqttSender:
                 )
             else:
                 self.logger.debug(f"no data for {mac}")
+        if not something_is_alive:
+            if self.bleak_scanner:
+                self.logger.error("There is no sensors alive!!! Restarting bleak ...")
+                await self.bleak_scanner.stop()
+                await asyncio.sleep(10)
+                await self.bleak_scanner.start()
+                self.logger.error("There is no sensors alive!!! Restarting bleak ...")
+            else:
+                self.logger.error(
+                    "There is no sensors alive!!! Can't restart bleak - not registered!",
+                )
 
 
 async def main() -> None:
@@ -220,6 +237,7 @@ async def main() -> None:
     bleak_scanner = BleakScanner(
         detection_callback=ble_handler.handle_on_device_found,
     )
+    mqtt_sender.register_bleak(bleak_scanner)
 
     async with bleak_scanner:
         while True:
