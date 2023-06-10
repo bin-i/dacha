@@ -12,7 +12,7 @@ services:
     restart: always
 
   zigbee2mqtt:
-    image: koenkk/zigbee2mqtt
+    image: koenkk/zigbee2mqtt:1.31.2
     volumes:
       - "{{ dacha_etc }}/zigbee2mqtt/configuration.yaml:/app/data/configuration.yaml"
       - "{{ dacha_etc }}/zigbee2mqtt/secrets.yaml:/app/data/secrets.yaml"
@@ -73,7 +73,7 @@ services:
     restart: always
 
   prometheus:
-    image: prom/prometheus:v2.43.0
+    image: prom/prometheus:v2.44.0
     ports:
       - "{{ prometheus_port }}:9090"
     volumes:
@@ -82,7 +82,7 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
-      - "storage.tsdb.retention.time=3y"
+      - "--storage.tsdb.retention.time=3y"
     networks:
       - dacha-net
     user: "0:0"
@@ -113,7 +113,7 @@ services:
     restart: always
 
   grafana:
-    image: grafana/grafana:9.2.15
+    image: grafana/grafana:9.5.3
     volumes:
       - "{{ dacha_etc }}/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro"
       - "{{ dacha_etc }}/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro"
