@@ -25,6 +25,11 @@ metrics:
    help: energy
    type: gauge
 
+ - prom_name: sensor_power
+   mqtt_name: power
+   help: power
+   type: gauge
+
  - prom_name: sensor_zigbee_linkquality
    mqtt_name: linkquality
    help: linkquality
